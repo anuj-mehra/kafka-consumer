@@ -1,3 +1,7 @@
+## Good reeds;
+https://learning.oreilly.com/library/view/kafka-the-definitive/9781491936153/ch04.html#idm45788273292488
+https://www.confluent.io/blog/tutorial-getting-started-with-the-new-apache-kafka-0-9-consumer-client/
+
 ## Start Kafka
 cd /users/anujmehra/apps/kafka_2.13-2.7.0/bin/
 ./zookeeper-server-start.sh   /users/anujmehra/apps/kafka_2.13-2.7.0/config/zookeeper.properties

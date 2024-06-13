@@ -2,15 +2,13 @@ package com.poc.kafkaconsumer.jsonkafkaconsumer
 
 import com.poc.kafkaconsumer.config.{KafkaConnectionContants, KafkaConsumerConfig}
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
-import org.apache.kafka.common.TopicPartition
 
 import java.io.File
 import java.time.Duration
-import java.util
 import java.util.Properties
 import scala.util.control.Breaks.{break, breakable}
 
-object CommitSpecificOffset {
+object AlwaysReadFromTheStart {
 
   def process(properties: Properties, config: KafkaConsumerConfig): Unit = {
     properties.put(KafkaConnectionContants.GroupId, config.jsonMsgConsumerGroupId)
@@ -21,6 +19,7 @@ object CommitSpecificOffset {
     val consumer = new KafkaConsumer[String, String](properties)
     consumer.subscribe(java.util.Collections.singletonList(config.jsonMsgTopicName))
 
+
     val existingStopConsumerFile = new File(config.kafkaConsumerStopFile)
     if (existingStopConsumerFile.exists()) {
       existingStopConsumerFile.delete()
@@ -28,8 +27,9 @@ object CommitSpecificOffset {
 
     // polling the topic
     breakable {
-    while (true) {
+      while (true) {
         try {
+          consumer.seekToBeginning(consumer.assignment())
           println("------------ going to read data from kafka ----------------------")
           val consumerRecords: ConsumerRecords[String, String] = consumer.poll(Duration.ofSeconds(10))
 
@@ -39,22 +39,15 @@ object CommitSpecificOffset {
             println("partition ==>" + record.partition())
             println("key ==>" + record.key())
             println("value ==>" + record.value())
-            import org.apache.kafka.clients.consumer.OffsetAndMetadata
-
-            val offsetAndMetadataMap = new util.HashMap[TopicPartition, OffsetAndMetadata]()
-            offsetAndMetadataMap.put(new TopicPartition(record.topic(), record.partition()),
-              new OffsetAndMetadata(record.offset()))
-
-            consumer.commitAsync(offsetAndMetadataMap)
             //consumer.commitSync() ==> read only once..
             //consumer.com
           })
 
+          // commit sync
+          consumer.commitSync()
         } finally {
           val file = new File(config.kafkaConsumerStopFile)
           if (file.exists()) {
-            // commit sync
-            consumer.commitSync()
             consumer.close
             println("----- consumer shutdown successfully -----")
             break
